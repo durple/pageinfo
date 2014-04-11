@@ -1,26 +1,38 @@
+import requests
 from bs4 import BeautifulSoup
 from HTMLParser import HTMLParseError
-import tornado.httpclient
 import json
 import re
 from urlparse import urlparse
 from urlparse import urljoin
-import functools
-
+from pyquery import PyQuery as pq
+"""
 #get title, description, favicon, twitter card, facebook open graph data
-def get_meta(url, handler):
+def get_url_body(url):
+    r = requests.get(url)
+    status = r.status_code
+    if status/100 == 2 or status/100 == 3:
+        return r.text
+    else:
+        return ""
+def parse_html(url):
+    r = get_url_body(url)
+    if r:
+        d = pq(r)
+        head = d("head")
+        if head:
+            d = pq(head)
+            title = d("title")
+            print title.text()
 
-  if url is not None:
-    callback = functools.partial(parse_html, handler=handler, url=url)
-    http_client = tornado.httpclient.AsyncHTTPClient() 
-    http_client.fetch(url, callback)
 
-  else:
-    handler.write("something went wrong")
-    handler.finish()
+parse_html("http://www.nytimes.com/2014/04/11/books/francine-proses-lovers-at-the-chameleon-club-paris-1932.html?_r=0")
 
-def parse_html(response, handler, url):
 
+"""    
+def parse_html(url):
+
+  response = requests.get(url)
   data = {}
   data["title"] = ""
   data["description"] = None
@@ -29,8 +41,8 @@ def parse_html(response, handler, url):
   data["twitter"] = {}
 
   try:
-    if response.code == 200: 
-        soup = BeautifulSoup(response.body)
+    if response.status_code/100 == 2 or response.status_code == 3: 
+        soup = BeautifulSoup(response.text)
 
         #get title
         if soup.title.string:
@@ -67,16 +79,16 @@ def parse_html(response, handler, url):
               if tag_type == "twitter:description" and data["description"] is None:
                 data["description"] = tag["content"]
 
-        handler.write(json.dumps(data))
+        print(json.dumps(data))
 
     else:
-      handler.write( "URL returned status %s" % response.code)
+      print( "URL returned status %s" % response.code)
 
   except HTMLParseError:
-    handler.write( "Error parsing page data" )
-
+    print ("Error parsing page data" )
+"""
   handler.finish()
-
-
-
+"""
+parse_html("http://nyti.ms/1hH4xfK")
+parse_html("http://wp.me/p2L7Ik-GCWh")
 
